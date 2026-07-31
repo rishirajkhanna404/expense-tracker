@@ -797,6 +797,105 @@ a { color: inherit; text-decoration: none; }
 .landing-bar-bills { background: var(--accent); }
 
 /* ------------------------------------------------------------------ */
+/* Landing modal ("See how it works")                                  */
+/* ------------------------------------------------------------------ */
+
+.landing-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.landing-modal.is-open { display: flex; }
+
+.landing-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(26, 16, 51, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: landing-modal-fade 0.2s ease;
+}
+
+.landing-modal-panel {
+    position: relative;
+    width: 100%;
+    max-width: 880px;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem clamp(1.25rem, 3vw, 2rem) 2rem;
+    box-shadow: 0 24px 80px rgba(26, 16, 51, 0.35);
+    animation: landing-modal-pop 0.2s ease;
+}
+
+.landing-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 50%;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    z-index: 1;
+}
+
+.landing-modal-close:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+}
+
+.landing-modal-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+    text-align: center;
+}
+
+.landing-modal-video {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--ink);
+    border: 1px solid var(--border);
+}
+
+.landing-modal-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+@keyframes landing-modal-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes landing-modal-pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -826,4 +925,7 @@ a { color: inherit; text-decoration: none; }
         grid-template-columns: 55px 1fr;
         gap: 0.75rem;
     }
+    .landing-modal { padding: 0.75rem; }
+    .landing-modal-panel { padding: 1.25rem 1rem 1.25rem; }
+    .landing-modal-title { font-size: 1.2rem; margin-bottom: 1rem; }
 }

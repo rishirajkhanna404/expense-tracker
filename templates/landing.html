@@ -108,4 +108,29 @@
     </div>
 </section>
 
+<!-- How it works modal (opened by "See how it works") -->
+<div class="landing-modal" id="howItWorksModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
+    <div class="landing-modal-backdrop" data-modal-close></div>
+    <div class="landing-modal-panel" role="document">
+        <button type="button" class="landing-modal-close" data-modal-close aria-label="Close video">
+            <span aria-hidden="true">×</span>
+        </button>
+        <h2 id="howItWorksTitle" class="landing-modal-title">See how Spendly works</h2>
+        <div class="landing-modal-video">
+            <iframe
+                id="howItWorksVideo"
+                src="about:blank"
+                data-src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0"
+                title="How Spendly works"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}
