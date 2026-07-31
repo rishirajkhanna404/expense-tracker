@@ -4,57 +4,76 @@
 
 {% block content %}
 
-<section class="hero">
-    <div class="hero-inner">
-        <div class="hero-badge">Personal Finance Tracker</div>
-        <h1 class="hero-title">
-            Know where your<br>
-            <em>money goes</em>
-        </h1>
-        <p class="hero-subtitle">
-            Log expenses, understand your spending patterns,
-            and take control of your financial life —
-            one transaction at a time.
-        </p>
-        <div class="hero-actions">
-            <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
-            <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
+<section class="landing-hero">
+    <div class="landing-hero-inner">
+        <div class="landing-hero-badge">
+            <span class="landing-hero-badge-dot"></span>
+            Free to use · No credit card needed
         </div>
-    </div>
-    <div class="hero-visual">
-        <div class="mock-card">
-            <div class="mock-card-header">
-                <span class="mock-label">March 2026</span>
-                <span class="mock-total">₹12,450</span>
+
+        <h1 class="landing-hero-title">
+            Track every rupee.<br>
+            <em>Know where it goes.</em>
+        </h1>
+
+        <p class="landing-hero-subtitle">
+            Spendly helps you log expenses, spot patterns, and stay
+            on budget — without the spreadsheet headache.
+        </p>
+
+        <div class="landing-hero-actions">
+            <a href="{{ url_for('register') }}" class="landing-btn-primary">
+                <span class="landing-btn-icon" aria-hidden="true">+</span>
+                Create free account
+            </a>
+            <a href="#how-it-works" class="landing-btn-secondary">
+                See how it works
+            </a>
+        </div>
+
+        <div class="landing-dashboard">
+            <div class="landing-dashboard-chrome">
+                <span class="landing-dot landing-dot-red"></span>
+                <span class="landing-dot landing-dot-yellow"></span>
+                <span class="landing-dot landing-dot-green"></span>
             </div>
-            <div class="mock-bars">
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Bills</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar" style="width: 72%"></div>
-                    </div>
-                    <span class="mock-amt">₹4,500</span>
+
+            <div class="landing-dashboard-kpis">
+                <div class="landing-kpi">
+                    <div class="landing-kpi-label">This month</div>
+                    <div class="landing-kpi-value">₹18,240</div>
+                    <div class="landing-kpi-meta landing-kpi-meta-up">+12% vs last</div>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Food</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-2" style="width: 52%"></div>
-                    </div>
-                    <span class="mock-amt">₹3,200</span>
+                <div class="landing-kpi">
+                    <div class="landing-kpi-label">Budget left</div>
+                    <div class="landing-kpi-value">₹6,760</div>
+                    <div class="landing-kpi-meta landing-kpi-meta-good">43% remaining</div>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Health</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-3" style="width: 33%"></div>
-                    </div>
-                    <span class="mock-amt">₹2,050</span>
+                <div class="landing-kpi">
+                    <div class="landing-kpi-label">Transactions</div>
+                    <div class="landing-kpi-value">34</div>
+                    <div class="landing-kpi-meta">this month</div>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Transport</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-4" style="width: 28%"></div>
+            </div>
+
+            <div class="landing-dashboard-bars">
+                <div class="landing-bar-row">
+                    <span class="landing-bar-label">Food</span>
+                    <div class="landing-bar-track">
+                        <div class="landing-bar landing-bar-food" style="width: 72%"></div>
                     </div>
-                    <span class="mock-amt">₹1,800</span>
+                </div>
+                <div class="landing-bar-row">
+                    <span class="landing-bar-label">Travel</span>
+                    <div class="landing-bar-track">
+                        <div class="landing-bar landing-bar-travel" style="width: 48%"></div>
+                    </div>
+                </div>
+                <div class="landing-bar-row">
+                    <span class="landing-bar-label">Bills</span>
+                    <div class="landing-bar-track">
+                        <div class="landing-bar landing-bar-bills" style="width: 38%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,4 +108,29 @@
     </div>
 </section>
 
+<!-- How it works modal (opened by "See how it works") -->
+<div class="landing-modal" id="howItWorksModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
+    <div class="landing-modal-backdrop" data-modal-close></div>
+    <div class="landing-modal-panel" role="document">
+        <button type="button" class="landing-modal-close" data-modal-close aria-label="Close video">
+            <span aria-hidden="true">×</span>
+        </button>
+        <h2 id="howItWorksTitle" class="landing-modal-title">See how Spendly works</h2>
+        <div class="landing-modal-video">
+            <iframe
+                id="howItWorksVideo"
+                src="about:blank"
+                data-src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0"
+                title="How Spendly works"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}
