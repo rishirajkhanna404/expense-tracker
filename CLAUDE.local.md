@@ -42,7 +42,7 @@ Single-module Flask app — no blueprints, no `config.py`, no `models.py`, no `f
 
 **Templates** (`templates/`): all extend `base.html`, which carries the navbar, footer, Google Fonts (`DM Serif Display`, `DM Sans`), and shared CSS/JS includes. Three block regions: `{% block content %}`, `{% block head %}`, `{% block scripts %}`. Templates render the same templates on POST as on GET right now — the auth pages include `{% if error %}` blocks but no backend populates `error` yet, so the routes will need to switch to handling `request.method == "POST"` and passing an `error` variable.
 
-**Database layer** (`database/`): empty `__init__.py` plus `db.py`, which is currently a comment-only placeholder. The interface to implement is documented in the file: `get_db()` (return a SQLite connection with `row_factory` set and foreign keys enabled), `init_db()` (`CREATE TABLE IF NOT EXISTS` for all tables), `seed_db()` (insert sample dev data). The SQLite file lives at the repo root as `expense_tracker.db` (gitignored).
+**Database layer** (`database/`): empty `__init__.py` plus `db.py`, which is currently a comment-only placeholder. The interface to implement is documented in the file: `get_db()` (return a SQLite connection with `row_factory` set and foreign keys enabled), `init_db()` (`CREATE TABLE IF NOT EXISTS` for all tables), `seed_db()` (insert sample dev data). The SQLite file lives at the repo root as `spendwise.db` (gitignored).
 
 **Static assets** (`static/`): one hand-written `css/style.css`, `js/main.js` (also a placeholder comment), and `js/landing.js` (the working YouTube "See how it works" modal — keep this dependency-free, no IFrame API). Modal pattern: iframe is rendered with `src="about:blank"` and a `data-src` attribute; the JS swaps `src` to `data-src` on open and back to `about:blank` on close to stop the video.
 
@@ -53,4 +53,4 @@ Single-module Flask app — no blueprints, no `config.py`, no `models.py`, no `f
 - **Two hardcoded links in the footer** (`base.html:37-38`) point to `/terms` and `/privacy` as strings rather than `url_for("terms")` / `url_for("privacy")`. Prefer `url_for` for new links; leave existing ones unless the task touches them.
 - **No CSRF protection, no auth middleware, no session handling yet.** When adding `POST` handlers, also introduce sessions/flashing before exposing login or register to real users.
 - **Modal lazy-load iframe pattern** in `landing.js` is intentional (no YouTube IFrame API dependency). Don't pull it out unless asked.
-- **Gitignored**: `venv/`, `expense_tracker.db`, `__pycache__/`, `*.pyc`, `*.pyo`, `.env`, `.DS_Store`, `.claude/plans/`.
+- **Gitignored**: `venv/`, `spendwise.db`, `__pycache__/`, `*.pyc`, `*.pyo`, `.env`, `.DS_Store`, `.claude/plans/`.
