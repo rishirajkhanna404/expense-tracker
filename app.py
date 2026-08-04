@@ -1,8 +1,13 @@
-from flask import Flask, render_template
+import sqlite3
 
-from database.db import get_db, init_db, seed_db
+from flask import Flask, flash, redirect, render_template, request, url_for
+
+from database.db import create_user, init_db, seed_db
 
 app = Flask(__name__)
+
+# Required for flash() and session. Hardcoded dev key — replace before deploying.
+app.secret_key = "dev-secret-change-me"
 
 
 # ------------------------------------------------------------------ #
@@ -14,9 +19,36 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        confirm = request.form.get("confirm_password") or ""
+        form = {"name": name, "email": email}
+
+        # ---- validation ----
+        if not name or not email or not password or not confirm:
+            flash("All fields are required.", "error")
+            return render_template("register.html", form=form)
+
+        if password != confirm:
+            flash("Passwords do not match.", "error")
+            return render_template("register.html", form=form)
+
+        # ---- insert ----
+        try:
+            create_user(name, email, password)
+        except sqlite3.IntegrityError:
+            flash("Email already registered.", "error")
+            return render_template("register.html", form=form)
+
+        flash("Account created — please sign in.", "success")
+        return redirect(url_for("login"))
+
+    # GET
+    return render_template("register.html", form={})
 
 
 @app.route("/login")
