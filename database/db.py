@@ -101,3 +101,21 @@ def create_user(name, email, password):
         return cur.lastrowid
     finally:
         conn.close()
+
+
+def get_user_by_email(email):
+    """Return the user row matching `email`, or None.
+
+    Caller is expected to have normalised the email (strip + lower) so that
+    the comparison matches how create_user() stores it.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "SELECT id, name, email, password_hash, created_at "
+            "FROM users WHERE email = ?",
+            (email,),
+        )
+        return cur.fetchone()  # sqlite3.Row or None
+    finally:
+        conn.close()

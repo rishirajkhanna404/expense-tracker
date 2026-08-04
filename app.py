@@ -1,8 +1,9 @@
 import sqlite3
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash
 
-from database.db import create_user, init_db, seed_db
+from database.db import create_user, get_user_by_email, init_db, seed_db
 
 app = Flask(__name__)
 
@@ -21,6 +22,10 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # If already signed in, the auth pages have nothing to offer.
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
@@ -51,9 +56,35 @@ def register():
     return render_template("register.html", form={})
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return render_template("login.html")
+    # If already signed in, the auth pages have nothing to offer.
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        form = {"email": email}
+
+        if not email or not password:
+            flash("Email and password are required.", "error")
+            return render_template("login.html", form=form)
+
+        user = get_user_by_email(email)
+        if user is None or not check_password_hash(user["password_hash"], password):
+            # Same message either way — no user enumeration.
+            flash("Invalid email or password.", "error")
+            return render_template("login.html", form=form)
+
+        # Success — establish session.
+        session["user_id"] = user["id"]
+        session["user_name"] = user["name"]
+        session["user_email"] = user["email"]
+        flash(f"Welcome back, {user['name']}.", "success")
+        return redirect(url_for("landing"))
+
+    return render_template("login.html", form={})
 
 
 @app.route("/terms")
@@ -72,7 +103,9 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    flash("You've been signed out.", "success")
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
