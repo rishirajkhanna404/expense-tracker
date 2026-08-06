@@ -138,47 +138,70 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_expenses_for_user(user_id, limit=None):
+def get_expenses_for_user(user_id, limit=None, start_date=None, end_date=None):
     """Return the user's expenses as a list of sqlite3.Row, newest first.
 
-    Ordering is `date DESC, id DESC` so same-day rows are stable. When `limit`
-    is given, appends `LIMIT ?`; otherwise returns the full history.
+    Ordering is `date DESC, id DESC` so same-day rows are stable. When
+    `limit` is given, appends `LIMIT ?`; otherwise returns the full
+    history. When `start_date` / `end_date` (ISO YYYY-MM-DD strings) are
+    supplied, the query is scoped with an inclusive `date >= ?` and /
+    or `date <= ?` clause — both bounds may be passed independently.
     """
     conn = get_db()
     try:
+        clauses = ["user_id = ?"]
+        params = [user_id]
+        if start_date is not None:
+            clauses.append("date >= ?")
+            params.append(start_date)
+        if end_date is not None:
+            clauses.append("date <= ?")
+            params.append(end_date)
+        where = " AND ".join(clauses)
+
         if limit is None:
             cur = conn.execute(
-                "SELECT id, amount, category, date, description "
-                "FROM expenses WHERE user_id = ? "
-                "ORDER BY date DESC, id DESC",
-                (user_id,),
+                f"SELECT id, amount, category, date, description "
+                f"FROM expenses WHERE {where} "
+                f"ORDER BY date DESC, id DESC",
+                params,
             )
         else:
             cur = conn.execute(
-                "SELECT id, amount, category, date, description "
-                "FROM expenses WHERE user_id = ? "
-                "ORDER BY date DESC, id DESC LIMIT ?",
-                (user_id, limit),
+                f"SELECT id, amount, category, date, description "
+                f"FROM expenses WHERE {where} "
+                f"ORDER BY date DESC, id DESC LIMIT ?",
+                params + [limit],
             )
         return cur.fetchall()
     finally:
         conn.close()
 
 
-def get_category_breakdown_for_user(user_id):
-    """Return [(category, total), ...] grouped by category, largest total first.
+def get_category_breakdown_for_user(user_id, start_date=None, end_date=None):
+    """Return [(category, total), ...] grouped by category, largest first.
 
-    Categories with no expenses for the user are omitted (the SQL `GROUP BY`
-    handles that). Used by the profile category-breakdown section.
+    Same date-scoping rules as `get_expenses_for_user`. Used by the
+    profile category-breakdown section.
     """
     conn = get_db()
     try:
+        clauses = ["user_id = ?"]
+        params = [user_id]
+        if start_date is not None:
+            clauses.append("date >= ?")
+            params.append(start_date)
+        if end_date is not None:
+            clauses.append("date <= ?")
+            params.append(end_date)
+        where = " AND ".join(clauses)
+
         cur = conn.execute(
-            "SELECT category, SUM(amount) AS total "
-            "FROM expenses WHERE user_id = ? "
-            "GROUP BY category "
-            "ORDER BY total DESC",
-            (user_id,),
+            f"SELECT category, SUM(amount) AS total "
+            f"FROM expenses WHERE {where} "
+            f"GROUP BY category "
+            f"ORDER BY total DESC",
+            params,
         )
         return cur.fetchall()
     finally:
