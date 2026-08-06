@@ -44,7 +44,18 @@
         </div>
     </footer>
 
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+      // Initialise Lucide icons once the DOM is ready.
+      // lucide.createIcons() swaps <i data-lucide="..."> placeholders for <svg>.
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      });
+    </script>
+    {% endblock %}
 </body>
 </html>
