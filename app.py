@@ -1,9 +1,18 @@
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from database.db import create_user, get_user_by_email, init_db, seed_db
+from database.db import (
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+    get_expenses_for_user,
+    get_category_breakdown_for_user,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 
@@ -110,43 +119,130 @@ def logout():
     return redirect(url_for("landing"))
 
 
+# ------------------------------------------------------------------ #
+# Transaction history formatting                                      #
+# ------------------------------------------------------------------ #
+
+def format_tx_date(date_str):
+    """Format a YYYY-MM-DD date string as 'DD MMM YYYY' (e.g. '12 Aug 2026')."""
+    return datetime.strptime(date_str, "%Y-%m-%d").strftime("%d %b %Y")
+
+
+def format_inr(amount):
+    """Render a numeric amount as '₹1,234.50' — INR with thousands separators."""
+    return f"₹{amount:,.2f}"
+
+
+def build_transactions(expense_rows):
+    """Convert a list of expense rows into the dicts the template renders.
+
+    Each output dict has: date, description, category, amount_label.
+    `description` is coerced to empty string when NULL.
+    """
+    return [
+        {
+            "date": format_tx_date(row["date"]),
+            "description": row["description"] or "",
+            "category": row["category"],
+            "amount_label": format_inr(row["amount"]),
+        }
+        for row in expense_rows
+    ]
+
+
+# ------------------------------------------------------------------ #
+# Summary stats formatting                                            #
+# ------------------------------------------------------------------ #
+
+def build_stats(expense_rows, breakdown_rows):
+    """Compute total_spent, transaction_count, top_category for the stats row.
+
+    `expense_rows` is the full expense list (used for totals + count).
+    `breakdown_rows` is the category-breakdown result (used for top_category
+    by reading its first row, which is already ordered by total DESC).
+    Returns a dict matching the keys profile.html reads on `stats.*`.
+    """
+    total_spent = sum((row["amount"] for row in expense_rows), 0.0)
+    transaction_count = len(expense_rows)
+    top_category = breakdown_rows[0]["category"] if breakdown_rows else "—"
+
+    return {
+        "total_spent": total_spent,
+        "total_spent_label": format_inr(total_spent),
+        "transaction_count": transaction_count,
+        "top_category": top_category,
+    }
+
+
+# ------------------------------------------------------------------ #
+# Category breakdown formatting                                       #
+# ------------------------------------------------------------------ #
+
+def build_categories(breakdown_rows):
+    """Convert category breakdown rows into the dicts the template iterates.
+
+    Each output dict has: name, total, total_label, share (integer percent).
+    When the breakdown is empty the helper returns [] — the template iterates
+    safely over an empty list and the parent route passes it through.
+    """
+    if not breakdown_rows:
+        return []
+
+    overall_total = sum(row["total"] for row in breakdown_rows)
+    if overall_total == 0:
+        # All zero-amount expenses — guard against division by zero.
+        return [
+            {
+                "name": row["category"],
+                "total": row["total"],
+                "total_label": format_inr(row["total"]),
+                "share": 0,
+            }
+            for row in breakdown_rows
+        ]
+
+    return [
+        {
+            "name": row["category"],
+            "total": row["total"],
+            "total_label": format_inr(row["total"]),
+            "share": round(row["total"] / overall_total * 100),
+        }
+        for row in breakdown_rows
+    ]
+
+
 @app.route("/profile")
 def profile():
-    if not session.get("user_id"):
+    user_id = session.get("user_id")
+    if not user_id:
         return redirect(url_for("login"))
 
-    # Hardcoded sample data — Step 05 will replace these with DB queries.
+    # Session may outlive the user row (account deleted, DB reset).
+    # Clear it and bounce to login instead of 500-ing.
+    user_row = get_user_by_id(user_id)
+    if user_row is None:
+        session.clear()
+        flash("Your session has expired. Please sign in again.", "error")
+        return redirect(url_for("login"))
+
+    expenses = get_expenses_for_user(user_id)            # full history — totals need it
+    recent = get_expenses_for_user(user_id, limit=20)    # table shows the 20 newest
+    breakdown = get_category_breakdown_for_user(user_id)
+
     user = {
-        "name": "Demo User",
-        "email": "demo@spendwise.com",
-        "member_since": "August 2026",
-        "initials": "DU",
+        "name": user_row["name"],
+        "email": user_row["email"],
+        "member_since": datetime.strptime(
+            user_row["created_at"][:10], "%Y-%m-%d"
+        ).strftime("%B %Y"),
+        "initials": "".join(
+            part[0] for part in user_row["name"].split()[:2]
+        ).upper() or "?",
     }
-    stats = {
-        "total_spent": 2625.00,
-        "total_spent_label": "₹2,625.00",
-        "transaction_count": 8,
-        "top_category": "Food",
-    }
-    transactions = [
-        {"date": "12 Apr 2025", "description": "Groceries — weekly run", "category": "Food",          "amount": 250.00,  "amount_label": "₹250.00"},
-        {"date": "11 Apr 2025", "description": "Metro card top-up",      "category": "Transport",     "amount": 60.00,   "amount_label": "₹60.00"},
-        {"date": "10 Apr 2025", "description": "Electricity bill",       "category": "Bills",         "amount": 1200.00, "amount_label": "₹1,200.00"},
-        {"date": "09 Apr 2025", "description": "New running shoes",      "category": "Shopping",      "amount": 450.00,  "amount_label": "₹450.00"},
-        {"date": "08 Apr 2025", "description": "Movie tickets",          "category": "Entertainment", "amount": 180.00,  "amount_label": "₹180.00"},
-        {"date": "05 Apr 2025", "description": "Dinner with friends",    "category": "Food",          "amount": 320.00,  "amount_label": "₹320.00"},
-        {"date": "02 Apr 2025", "description": "Pharmacy",               "category": "Health",        "amount": 90.00,   "amount_label": "₹90.00"},
-        {"date": "28 Mar 2025", "description": "Miscellaneous",          "category": "Other",         "amount": 75.00,   "amount_label": "₹75.00"},
-    ]
-    categories = [
-        {"name": "Food",          "total": 570.00,  "total_label": "₹570.00",  "share": 22},
-        {"name": "Bills",         "total": 1200.00, "total_label": "₹1,200.00","share": 46},
-        {"name": "Shopping",      "total": 450.00,  "total_label": "₹450.00",  "share": 17},
-        {"name": "Entertainment", "total": 180.00,  "total_label": "₹180.00",  "share": 7},
-        {"name": "Health",        "total": 90.00,   "total_label": "₹90.00",   "share": 3},
-        {"name": "Transport",     "total": 60.00,   "total_label": "₹60.00",   "share": 2},
-        {"name": "Other",         "total": 75.00,   "total_label": "₹75.00",   "share": 3},
-    ]
+    stats = build_stats(expenses, breakdown)
+    transactions = build_transactions(recent)
+    categories = build_categories(breakdown)
 
     return render_template(
         "profile.html",

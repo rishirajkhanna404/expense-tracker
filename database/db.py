@@ -119,3 +119,67 @@ def get_user_by_email(email):
         return cur.fetchone()  # sqlite3.Row or None
     finally:
         conn.close()
+
+
+def get_user_by_id(user_id):
+    """Return the user row for `user_id`, or None.
+
+    Selects only the columns the profile view needs (never password_hash).
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "SELECT id, name, email, created_at "
+            "FROM users WHERE id = ?",
+            (user_id,),
+        )
+        return cur.fetchone()  # sqlite3.Row or None
+    finally:
+        conn.close()
+
+
+def get_expenses_for_user(user_id, limit=None):
+    """Return the user's expenses as a list of sqlite3.Row, newest first.
+
+    Ordering is `date DESC, id DESC` so same-day rows are stable. When `limit`
+    is given, appends `LIMIT ?`; otherwise returns the full history.
+    """
+    conn = get_db()
+    try:
+        if limit is None:
+            cur = conn.execute(
+                "SELECT id, amount, category, date, description "
+                "FROM expenses WHERE user_id = ? "
+                "ORDER BY date DESC, id DESC",
+                (user_id,),
+            )
+        else:
+            cur = conn.execute(
+                "SELECT id, amount, category, date, description "
+                "FROM expenses WHERE user_id = ? "
+                "ORDER BY date DESC, id DESC LIMIT ?",
+                (user_id, limit),
+            )
+        return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def get_category_breakdown_for_user(user_id):
+    """Return [(category, total), ...] grouped by category, largest total first.
+
+    Categories with no expenses for the user are omitted (the SQL `GROUP BY`
+    handles that). Used by the profile category-breakdown section.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "SELECT category, SUM(amount) AS total "
+            "FROM expenses WHERE user_id = ? "
+            "GROUP BY category "
+            "ORDER BY total DESC",
+            (user_id,),
+        )
+        return cur.fetchall()
+    finally:
+        conn.close()
