@@ -83,7 +83,7 @@ def login():
         session["user_id"] = user["id"]
         session["user_name"] = user["name"]
         session["user_email"] = user["email"]
-        flash(f"Welcome back, {user['name']}.", "success")
+        # flash(f"Welcome back, {user['name']}.", "success")
         return redirect(url_for("profile"))
 
     return render_template("login.html", form={})
