@@ -18,6 +18,48 @@
         </div>
     </div>
 
+    {# 1b. Date filter bar (Step 06) #}
+    <form class="filter-bar" method="get" action="{{ url_for('profile') }}">
+        <div class="filter-bar-row">
+            <div class="filter-group">
+                <label for="filter-range">Range</label>
+                <select id="filter-range" name="range" class="form-input">
+                    <option value="" {% if not filter.preset %}selected{% endif %}>
+                        All time
+                    </option>
+                    {% for key in presets %}
+                    <option value="{{ key }}" {% if filter.preset == key %}selected{% endif %}>
+                        {{ key | replace('-', ' ') | title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-start">From</label>
+                <input id="filter-start" name="start" type="date"
+                       value="{{ filter.start or '' }}"
+                       class="form-input">
+            </div>
+            <div class="filter-group">
+                <label for="filter-end">To</label>
+                <input id="filter-end" name="end" type="date"
+                       value="{{ filter.end or '' }}"
+                       class="form-input">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-submit btn-submit--inline">Apply</button>
+                {% if filter.active %}
+                <a href="{{ url_for('profile') }}" class="btn-ghost btn-ghost--inline">Clear</a>
+                {% endif %}
+            </div>
+        </div>
+        {% if filter.active %}
+        <p class="filter-summary">
+            Showing <strong>{{ filter.label }}</strong>.
+        </p>
+        {% endif %}
+    </form>
+
     {# 2. Summary stats row #}
     <div class="stats-row">
         <div class="stat-card">
@@ -60,14 +102,22 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for tx in transactions %}
-                    <tr>
-                        <td>{{ tx.date }}</td>
-                        <td>{{ tx.description }}</td>
-                        <td><span class="category-badge category-badge--{{ tx.category|lower }}">{{ tx.category }}</span></td>
-                        <td class="amount">{{ tx.amount_label }}</td>
-                    </tr>
-                    {% endfor %}
+                    {% if transactions %}
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.date }}</td>
+                            <td>{{ tx.description }}</td>
+                            <td><span class="category-badge category-badge--{{ tx.category|lower }}">{{ tx.category }}</span></td>
+                            <td class="amount">{{ tx.amount_label }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No transactions in this date range.
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
@@ -77,16 +127,20 @@
     <div class="section-card">
         <h2 class="section-title">By Category</h2>
         <div class="mock-bars">
-            {% for cat in categories %}
-            <div class="mock-bar-row">
-                <span class="mock-cat">{{ cat.name }}</span>
-                <div class="mock-bar-track">
-                    {# Width is data, not styling. The only inline style in this template. #}
-                    <div class="mock-bar mock-bar--{{ cat.name|lower }}" style="width: {{ cat.share }}%;"></div>
+            {% if categories %}
+                {% for cat in categories %}
+                <div class="mock-bar-row">
+                    <span class="mock-cat">{{ cat.name }}</span>
+                    <div class="mock-bar-track">
+                        {# Width is data, not styling. The only inline style in this template. #}
+                        <div class="mock-bar mock-bar--{{ cat.name|lower }}" style="width: {{ cat.share }}%;"></div>
+                    </div>
+                    <span class="mock-amt">{{ cat.total_label }}</span>
                 </div>
-                <span class="mock-amt">{{ cat.total_label }}</span>
-            </div>
-            {% endfor %}
+                {% endfor %}
+            {% else %}
+                <p class="empty-state">No expenses in this date range.</p>
+            {% endif %}
         </div>
     </div>
 

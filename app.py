@@ -226,9 +226,25 @@ def profile():
         flash("Your session has expired. Please sign in again.", "error")
         return redirect(url_for("login"))
 
-    expenses = get_expenses_for_user(user_id)            # full history — totals need it
-    recent = get_expenses_for_user(user_id, limit=20)    # table shows the 20 newest
-    breakdown = get_category_breakdown_for_user(user_id)
+    # ---- date filter (Step 06) ----
+    from database.filters import PRESETS, resolve_filter
+    raw_args = {
+        "range": request.args.get("range"),
+        "start": request.args.get("start"),
+        "end": request.args.get("end"),
+    }
+    flt = resolve_filter(raw_args)
+    preset_keys = list(PRESETS.keys())  # template iterates to render <option>s
+
+    expenses = get_expenses_for_user(
+        user_id, start_date=flt["start"], end_date=flt["end"]
+    )                                                # full filtered history
+    recent = get_expenses_for_user(
+        user_id, limit=20, start_date=flt["start"], end_date=flt["end"]
+    )                                                # table shows the 20 newest
+    breakdown = get_category_breakdown_for_user(
+        user_id, start_date=flt["start"], end_date=flt["end"]
+    )
 
     user = {
         "name": user_row["name"],
@@ -250,6 +266,8 @@ def profile():
         stats=stats,
         transactions=transactions,
         categories=categories,
+        filter=flt,
+        presets=preset_keys,
     )
 
 
