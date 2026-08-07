@@ -1412,3 +1412,12 @@ a { color: inherit; text-decoration: none; }
     .coming-soon-icon i,
     .coming-soon-icon svg { width: 28px; height: 28px; }
 }
+
+/* Profile action row (Step 07) — small horizontal cluster for the
+   "Add expense" button. Sits between the user-info card and the
+   filter bar. */
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 1.25rem 0 0.5rem;
+}

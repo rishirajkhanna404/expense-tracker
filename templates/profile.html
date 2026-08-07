@@ -18,6 +18,13 @@
         </div>
     </div>
 
+    {# 1a. Add-expense entry point (Step 07) #}
+    <div class="profile-actions">
+        <a href="{{ url_for('add_expense') }}" class="btn-submit btn-submit--inline">
+            + Add expense
+        </a>
+    </div>
+
     {# 1b. Date filter bar (Step 06) #}
     <form class="filter-bar" method="get" action="{{ url_for('profile') }}">
         <div class="filter-bar-row">
