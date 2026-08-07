@@ -97,12 +97,14 @@ def resolve_filter(args, today=None):
 
     Rules (per spec):
       - Invalid start/end values silently fall back to None (no 400).
-      - Explicit start/end take precedence over `range` for the *applied*
-        filter; both are kept in the response so the template can
-        pre-populate both inputs.
-      - The currently-active preset (per the URL) takes precedence for the
-        dropdown's `selected` attribute — if the URL has ?range=last-30,
-        that's selected even when explicit start/end are also present.
+      - When a valid preset is in the URL, the preset is authoritative:
+        its computed dates override any start/end the browser resubmitted.
+        This avoids the stale-date-pickers trap where picking a new preset
+        from the dropdown silently kept the previous preset's range.
+      - When no preset is in the URL, explicit start/end (if both valid)
+        define the applied filter — for a custom range without a preset.
+      - The currently-active preset (per the URL) is what the dropdown's
+        `selected` attribute reflects.
       - `today` is injectable for tests; defaults to date.today().
     """
     today = today or date.today()
@@ -119,8 +121,14 @@ def resolve_filter(args, today=None):
     preset = raw_range if raw_range in PRESETS else None
 
     # Decide what filter is actually applied.
+    # When a preset is explicitly named in the URL, the preset is
+    # authoritative — recompute its dates and use those. This handles the
+    # case where the browser resubmits stale start/end from the date
+    # pickers (which still show the previous preset's dates until the
+    # response re-renders them). Without this, picking a new preset would
+    # silently be ignored if the previous preset had populated the pickers.
     applied_start, applied_end = start, end
-    if applied_start is None and applied_end is None and preset is not None:
+    if preset is not None:
         applied_start, applied_end = PRESETS[preset](today)
 
     # Build the label.
