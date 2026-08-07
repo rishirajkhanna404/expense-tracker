@@ -1,18 +1,20 @@
 import sqlite3
 from datetime import date, datetime
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (
     create_expense,
     create_user,
-    get_user_by_email,
-    get_user_by_id,
+    get_expense_by_id,
     get_expenses_for_user,
     get_category_breakdown_for_user,
+    get_user_by_email,
+    get_user_by_id,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -142,6 +144,7 @@ def build_transactions(expense_rows):
     """
     return [
         {
+            "id": row["id"],
             "date": format_tx_date(row["date"]),
             "description": row["description"] or "",
             "category": row["category"],
@@ -387,9 +390,107 @@ def analytics():
     return render_template("analytics.html")
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    # ---- auth gate (matches /expenses/add, app.py:286-288) ----
+    if not session.get("user_id"):
+        flash("Please sign in to edit an expense.", "error")
+        return redirect(url_for("login"))
+
+    # ---- fetch + ownership check (404 on miss, never 403) ----
+    row = get_expense_by_id(id, session["user_id"])
+    if row is None:
+        abort(404)
+
+    # ---- POST: validate + update ----
+    if request.method == "POST":
+        raw_amount = (request.form.get("amount") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        date_str = (request.form.get("date") or "").strip()
+        description = (request.form.get("description") or "").strip()
+
+        form = {
+            "amount": raw_amount,
+            "category": category,
+            "date": date_str,
+            "description": description,
+        }
+
+        # 1. amount: must be a positive number > 0
+        try:
+            amount = float(raw_amount)
+        except ValueError:
+            flash("Amount must be a number.", "error")
+            return render_template(
+                "edit_expense.html",
+                expense=row, form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+        if amount <= 0:
+            flash("Amount must be greater than zero.", "error")
+            return render_template(
+                "edit_expense.html",
+                expense=row, form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 2. category: must be in the allowed set
+        if category not in ALLOWED_CATEGORIES:
+            flash("Please choose a valid category.", "error")
+            return render_template(
+                "edit_expense.html",
+                expense=row, form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 3. date: must parse as YYYY-MM-DD
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            flash("Date must be in YYYY-MM-DD format.", "error")
+            return render_template(
+                "edit_expense.html",
+                expense=row, form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 4. description: truncate to 200 chars; empty string -> NULL
+        description = description[:200] or None
+
+        # 5. update
+        update_expense(
+            expense_id=id,
+            user_id=session["user_id"],
+            amount=amount,
+            category=category,
+            date=date_str,
+            description=description,
+        )
+
+        flash("Expense updated.", "success")
+
+        # Optional: preserve the active date filter when bouncing back to
+        # /profile (same pattern as add_expense, app.py:359-365).
+        referrer = request.headers.get("Referer", "")
+        if "/profile" in referrer:
+            from urllib.parse import urlparse
+            qs = urlparse(referrer).query
+            if qs:
+                return redirect(f"{url_for('profile')}?{qs}")
+        return redirect(url_for("profile"))
+
+    # ---- GET: render form pre-populated with the row's current values ----
+    form = {
+        "amount": str(row["amount"]),
+        "category": row["category"],
+        "date": row["date"],
+        "description": row["description"] or "",
+    }
+    return render_template(
+        "edit_expense.html",
+        expense=row, form=form,
+        categories=sorted(ALLOWED_CATEGORIES),
+    )
 
 
 @app.route("/expenses/<int:id>/delete")
