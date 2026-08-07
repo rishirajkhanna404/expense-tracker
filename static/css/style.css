@@ -1032,6 +1032,20 @@ a { color: inherit; text-decoration: none; }
     padding: 1.5rem 1.75rem;
 }
 
+/* Section card header (Step 08) — flex row that puts the section title
+   on the left and any actions (e.g. "+ Add expense") on the right. */
+.section-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.section-card-header .section-title {
+    margin-bottom: 0;
+}
+
 .section-title {
     font-family: var(--font-display);
     font-size: 1.5rem;
@@ -1081,6 +1095,14 @@ a { color: inherit; text-decoration: none; }
 /* Right-align the Amount header to mirror the cells it titles. */
 .transactions-table th.amount {
     text-align: right;
+}
+
+/* Transaction row actions (Step 08) — keeps the Edit link column
+   visually compact and right-aligned. Mirrors the `.amount` column's
+   right-alignment for symmetry. */
+.transactions-table .actions {
+    text-align: right;
+    white-space: nowrap;
 }
 
 /* Subtle row hover per the frontend-design skill's "always have row hover" rule. */
@@ -1413,11 +1435,3 @@ a { color: inherit; text-decoration: none; }
     .coming-soon-icon svg { width: 28px; height: 28px; }
 }
 
-/* Profile action row (Step 07) — small horizontal cluster for the
-   "Add expense" button. Sits between the user-info card and the
-   filter bar. */
-.profile-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin: 1.25rem 0 0.5rem;
-}

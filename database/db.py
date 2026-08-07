@@ -198,6 +198,46 @@ def get_expenses_for_user(user_id, limit=None, start_date=None, end_date=None):
         conn.close()
 
 
+def get_expense_by_id(expense_id, user_id):
+    """Return the expense row if it belongs to `user_id`, else None.
+
+    Combines fetch + ownership check in one query so the route can
+    404 on miss without a separate auth check. Selects every column
+    the edit form needs (never `created_at` — it isn't editable).
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "SELECT id, user_id, amount, category, date, description "
+            "FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        return cur.fetchone()  # sqlite3.Row or None
+    finally:
+        conn.close()
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """Update an expense row, scoped to the owning user.
+
+    Returns the number of rows changed (0 if no row matched — caller
+    treats that as 404). `description` may be None (stored as NULL).
+    `created_at` is intentionally not in the SET clause.
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE expenses "
+            "SET amount = ?, category = ?, date = ?, description = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
 def get_category_breakdown_for_user(user_id, start_date=None, end_date=None):
     """Return [(category, total), ...] grouped by category, largest first.
 
