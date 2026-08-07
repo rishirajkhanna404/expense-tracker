@@ -276,6 +276,15 @@ def add_expense():
     return "Add expense — coming in Step 7"
 
 
+@app.route("/analytics")
+def analytics():
+    # Coming soon — gated so only signed-in users can see it.
+    if not session.get("user_id"):
+        flash("Please sign in to view your analytics.", "error")
+        return redirect(url_for("login"))
+    return render_template("analytics.html")
+
+
 @app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
     return "Edit expense — coming in Step 8"
