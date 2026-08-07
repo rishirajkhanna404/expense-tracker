@@ -1242,3 +1242,173 @@ a { color: inherit; text-decoration: none; }
     .filter-bar-row { flex-direction: column; align-items: stretch; }
     .filter-group { min-width: 0; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Navbar — active link state                                          */
+/* ------------------------------------------------------------------ */
+
+.nav-links a.nav-active {
+    color: var(--ink);
+    font-weight: 600;
+    position: relative;
+}
+
+.nav-links a.nav-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.5rem;          /* sits just under the navbar's 60px row */
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Analytics — Coming Soon card                                        */
+/* ------------------------------------------------------------------ */
+
+.coming-soon {
+    min-height: calc(100vh - 60px - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: var(--paper-warm);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.coming-soon-card {
+    position: relative;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 3rem clamp(1.75rem, 5vw, 3.5rem) 2.5rem;
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+    box-shadow: 0 12px 60px rgba(26, 16, 51, 0.08);
+    overflow: hidden;
+}
+
+/* Soft decorative blobs that sit behind the content. */
+.coming-soon-blob {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    opacity: 0.55;
+    filter: blur(2px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.coming-soon-blob--tr {
+    top: -60px;
+    right: -60px;
+}
+
+.coming-soon-blob--bl {
+    bottom: -70px;
+    left: -70px;
+    background: var(--paper-warm);
+    opacity: 0.9;
+}
+
+.coming-soon-card > *:not(.coming-soon-blob) {
+    position: relative;
+    z-index: 1;
+}
+
+/* Dark square icon tile — clock glyph in white. */
+.coming-soon-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.coming-soon-icon i,
+.coming-soon-icon svg {
+    width: 32px;
+    height: 32px;
+    stroke: currentColor;
+}
+
+/* Dark "COMING SOON" pill — reuses the shape of nav-cta / btn-submit. */
+.coming-soon-badge {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+}
+
+.coming-soon-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.85rem, 3.5vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 1rem;
+}
+
+.coming-soon-body {
+    font-size: 0.95rem;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    max-width: 420px;
+    margin: 0 auto 2rem;
+}
+
+.coming-soon-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.coming-soon-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    /* Each dot runs the same 3-step cycle but is offset by 1/3 of the
+       duration so they light up in turn: dot 1 → dot 2 → dot 3 → loop. */
+    animation: coming-soon-pulse 2.4s infinite ease-in-out;
+}
+
+.coming-soon-dot:nth-child(2) { animation-delay: 0.8s; }
+.coming-soon-dot:nth-child(3) { animation-delay: 1.6s; }
+
+@keyframes coming-soon-pulse {
+    0%, 100% { background: var(--border); }
+    16.67%   { background: var(--ink-muted); }
+    33.33%   { background: var(--border); }
+}
+
+.coming-soon-foot {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .coming-soon { padding: 3rem 1.25rem; }
+    .coming-soon-card { padding: 2.5rem 1.5rem 2rem; }
+    .coming-soon-icon { width: 56px; height: 56px; border-radius: 14px; }
+    .coming-soon-icon i,
+    .coming-soon-icon svg { width: 28px; height: 28px; }
+}
