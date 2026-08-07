@@ -103,6 +103,26 @@ def create_user(name, email, password):
         conn.close()
 
 
+def create_expense(user_id, amount, category, date, description=None):
+    """Insert a new expense row. Returns the new row's id.
+
+    `description` is stored as NULL when empty/None so the existing
+    `description or ""` rendering in build_transactions() keeps working.
+    Raises sqlite3.IntegrityError if `user_id` doesn't exist (FK violation).
+    """
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
 def get_user_by_email(email):
     """Return the user row matching `email`, or None.
 

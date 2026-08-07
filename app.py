@@ -1,10 +1,11 @@
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (
+    create_expense,
     create_user,
     get_user_by_email,
     get_user_by_id,
@@ -271,9 +272,110 @@ def profile():
     )
 
 
-@app.route("/expenses/add")
+# Allowed categories — kept inline so the route stays self-contained.
+# Mirrors the fixed list from spec 01 (database/db.py SAMPLE_EXPENSES).
+ALLOWED_CATEGORIES = {
+    "Food", "Transport", "Bills", "Health",
+    "Entertainment", "Shopping", "Other",
+}
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    # ---- auth gate (matches /analytics, app.py:279-285) ----
+    if not session.get("user_id"):
+        flash("Please sign in to add an expense.", "error")
+        return redirect(url_for("login"))
+
+    # ---- POST: validate + insert ----
+    if request.method == "POST":
+        raw_amount = (request.form.get("amount") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        date_str = (request.form.get("date") or "").strip()
+        description = (request.form.get("description") or "").strip()
+
+        form = {
+            "amount": raw_amount,
+            "category": category,
+            "date": date_str,
+            "description": description,
+        }
+
+        # 1. amount: must be a positive number > 0
+        try:
+            amount = float(raw_amount)
+        except ValueError:
+            flash("Amount must be a number.", "error")
+            return render_template(
+                "add_expense.html",
+                form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+        if amount <= 0:
+            flash("Amount must be greater than zero.", "error")
+            return render_template(
+                "add_expense.html",
+                form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 2. category: must be in the allowed set
+        if category not in ALLOWED_CATEGORIES:
+            flash("Please choose a valid category.", "error")
+            return render_template(
+                "add_expense.html",
+                form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 3. date: must parse as YYYY-MM-DD
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            flash("Date must be in YYYY-MM-DD format.", "error")
+            return render_template(
+                "add_expense.html",
+                form=form,
+                categories=sorted(ALLOWED_CATEGORIES),
+            )
+
+        # 4. description: truncate to 200 chars; empty string -> NULL
+        description = description[:200] or None
+
+        # 5. insert
+        create_expense(
+            user_id=session["user_id"],
+            amount=amount,
+            category=category,
+            date=date_str,
+            description=description,
+        )
+
+        flash("Expense added.", "success")
+
+        # Optional: preserve the active date filter when bouncing back to
+        # /profile (e.g. when the user came from a filtered view). Fall back
+        # to bare /profile when the referrer is missing or unrelated.
+        referrer = request.headers.get("Referer", "")
+        if "/profile" in referrer:
+            from urllib.parse import urlparse
+            qs = urlparse(referrer).query
+            if qs:
+                return redirect(f"{url_for('profile')}?{qs}")
+        return redirect(url_for("profile"))
+
+    # ---- GET: render empty form, default date = today ----
+    form = {
+        "amount": "",
+        "category": "",
+        "date": date.today().isoformat(),
+        "description": "",
+    }
+    return render_template(
+        "add_expense.html",
+        form=form,
+        categories=sorted(ALLOWED_CATEGORIES),
+    )
 
 
 @app.route("/analytics")
