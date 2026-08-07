@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from datetime import date, datetime
 
@@ -499,7 +500,9 @@ def delete_expense(id):
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        init_db()
-        seed_db()
-    app.run(debug=True, port=5001)
+    # Production startup: initialise + seed the DB on every boot so demo data
+    # is restored on Railway's ephemeral filesystem. seed_db() is idempotent.
+    init_db()
+    seed_db()
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=False)
